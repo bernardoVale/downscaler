@@ -13,6 +13,10 @@ func appsToSleep(active map[string]int, actual map[string]int) []string {
 	return []string{"default:foo"}
 }
 
+// func checkPrometheusMetrics(ctx context.Context) map[string]int {
+
+// }
+
 func sleeper(ctx context.Context, poster backend.Poster) {
 	tick := time.NewTicker(time.Minute)
 	defer tick.Stop()
@@ -45,6 +49,10 @@ func main() {
 	ctx := context.Background()
 	logrus.Info("Estabilishing connection with backend")
 	redis := backend.NewRedisClient("127.0.0.1:6379", "npCYPR7uAt")
+
+	prometheus := NewPrometheusClient()
+
+	prometheus.query(ctx, "rate(nginx_ingress_controller_requests{status=\"200\"}[4h])")
 
 	// try to retrieve some vals
 	_, err := redis.Retrieve("sleeping:default:grafana")

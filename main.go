@@ -7,23 +7,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func sleepCandidates(active map[string]float64, all []string) []string {
+func sleepCandidates(active map[string]int, all []string) []string {
 	for i, ingress := range all {
-		if requests, ok := active[ingress]; ok {
-			if requests > 0 {
-				// Remove active ingresses from sleep candidates
-				all[i] = all[len(all)-1]
-				all[len(all)-1] = ""
-				all = all[:len(all)-1]
-			}
+		if _, ok := active[ingress]; ok {
+			// Remove active ingresses from sleep candidates
+			all[i] = all[len(all)-1]
+			all[len(all)-1] = ""
+			all = all[:len(all)-1]
 		}
 	}
 	logrus.Info("Total candidates ", len(all))
 	return all
 }
 
-func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) map[string]float64 {
-	results, err := collector.getIngresses(ctx, "rate(nginx_ingress_controller_requests{status=\"200\"}[12h])")
+func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) map[string]int {
+	//"rate(nginx_ingress_controller_requests{status=\"200\"}[12h])"
+	results, err := collector.getIngresses(ctx, "sum(rate(nginx_ingress_controller_requests{status=\"200\"}[12h])) by (ingress,exported_namespace)")
 	if err != nil {
 		logrus.Errorf("Could not check prometheus metrics:%v", err)
 	}
@@ -45,7 +44,9 @@ func main() {
 	prometheus := NewPrometheusClient()
 	clientSet := mustAuthenticate()
 	deploymentsClient := clientSet.AppsV1()
-
+	//
+	// prometheus.getIngresses(ctx, )
+	checkPrometheusMetrics(ctx, prometheus)
 	logrus.Infoln("Starting sleeper process")
 	go sleeper(ctx, redis, prometheus, deploymentsClient)
 

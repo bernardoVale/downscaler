@@ -24,7 +24,7 @@ func NewPrometheusClient() PrometheusClient {
 	return PrometheusClient{client: prometheus.NewAPI(baseClient)}
 }
 
-type ingressResults map[string]float64
+type ingressResults map[string]int
 
 // type ingressResult struct {
 // Ingress  string
@@ -32,7 +32,7 @@ type ingressResults map[string]float64
 // }
 
 func (c PrometheusClient) getIngresses(ctx context.Context, query string) (ingresses ingressResults, err error) {
-	results := make(map[string]float64)
+	results := make(map[string]int)
 
 	val, err := c.client.Query(ctx, query, time.Now())
 	if err != nil {
@@ -42,7 +42,10 @@ func (c PrometheusClient) getIngresses(ctx context.Context, query string) (ingre
 	for _, sample := range val.(model.Vector) {
 		if ingress, ok := sample.Metric["ingress"]; ok {
 			if namespace, ok := sample.Metric["exported_namespace"]; ok {
-				results[fmt.Sprintf("%s/%s", namespace, ingress)] = float64(sample.Value)
+				value := float64(sample.Value)
+				if value > 0 {
+					results[fmt.Sprintf("%s/%s", namespace, ingress)] = 1
+				}
 			}
 		}
 	}

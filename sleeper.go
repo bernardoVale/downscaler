@@ -14,14 +14,14 @@ import (
 )
 
 func sleeper(ctx context.Context, poster backend.Poster, collector IngressCollector, kube appsv1.AppsV1Interface) {
-	tick := time.NewTicker(time.Minute)
+	tick := time.NewTicker(time.Second * 10)
 	defer tick.Stop()
 	for {
 		select {
 		case <-tick.C:
 			logrus.Info("Running sleeper again")
-			activeIngress := checkPrometheusMetrics(ctx, collector)
-			allIngresses := retrieveKubernetesIngresses(ctx)
+			activeIngress := checkPrometheusMetrics(ctx, collector) //9
+			allIngresses := retrieveKubernetesIngresses(ctx)        // 31
 
 			candidates := sleepCandidates(activeIngress, allIngresses)
 

@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	api "github.com/prometheus/client_golang/api"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"github.com/sirupsen/logrus"
 )
+
+type IngressCollector interface {
+	getIngresses(ctx context.Context, query string) (ingresses ingressResults, err error)
+}
 
 type PrometheusClient struct {
 	client prometheus.API
@@ -20,35 +24,27 @@ func NewPrometheusClient() PrometheusClient {
 	return PrometheusClient{client: prometheus.NewAPI(baseClient)}
 }
 
-func (c PrometheusClient) query(ctx context.Context, query string) {
+type ingressResults map[string]float64
+
+// type ingressResult struct {
+// Ingress  string
+// Requests model.SampleValue
+// }
+
+func (c PrometheusClient) getIngresses(ctx context.Context, query string) (ingresses ingressResults, err error) {
+	results := make(map[string]float64)
+
 	val, err := c.client.Query(ctx, query, time.Now())
-	must(err)
-	logrus.Info("type: %s", val.Type().String())
-
-	vector := val.(model.Vector)
-
-	for _, sample := range vector {
-		logrus.Info("Sample:", sample.Metric.String())
-		// sample.Metric.
-		// for i, v := range sample.Metric.(model.LabelSet) {
-		// 	logrus.Info("key=%v val=%v", i, v)
-		// }
-		logrus.Info("Value:", sample.Value)
+	if err != nil {
+		return results, err
 	}
-	// logrus.Info("data: %s", vector.String())
-	// for foo, bar := range val {
-	// 	logrus.Info("Foo: %v Bar: %v", foo, bar)
-	// }
 
-	// ioutil.WriteFile("query.json", data, 0640)
-
-	// if ()
-
-	// val.(model.Vector).
-	// vector, ok := val.(model.Vector).
-	//
-	// vector.
-	// if ok {
-	// logrus.Info("Vector: %v", vector)
-	// }
+	for _, sample := range val.(model.Vector) {
+		if ingress, ok := sample.Metric["ingress"]; ok {
+			if namespace, ok := sample.Metric["exported_namespace"]; ok {
+				results[fmt.Sprintf("%s/%s", namespace, ingress)] = float64(sample.Value)
+			}
+		}
+	}
+	return results, nil
 }

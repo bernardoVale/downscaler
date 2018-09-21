@@ -2,45 +2,37 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/bernardoVale/downscaler/backend"
 	"github.com/sirupsen/logrus"
 )
 
-func appsToSleep(active map[string]int, actual map[string]int) []string {
-	return []string{"default:foo"}
+func sleepCandidates(active map[string]float64, all []string) []string {
+	for i, ingress := range all {
+		if requests, ok := active[ingress]; ok {
+			if requests > 0 {
+				// Remove active ingresses from sleep candidates
+				all[i] = all[len(all)-1]
+				all[len(all)-1] = ""
+				all = all[:len(all)-1]
+			}
+		}
+	}
+	logrus.Info("Total candidates ", len(all))
+	return all
 }
 
-// func checkPrometheusMetrics(ctx context.Context) map[string]int {
+func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) map[string]float64 {
+	results, err := collector.getIngresses(ctx, "rate(nginx_ingress_controller_requests{status=\"200\"}[12h])")
+	if err != nil {
+		logrus.Errorf("Could not check prometheus metrics:%v", err)
+	}
+	return results
+}
 
-// }
-
-func sleeper(ctx context.Context, poster backend.Poster) {
-	tick := time.NewTicker(time.Minute)
-	defer tick.Stop()
-	for {
-		select {
-		case <-tick.C:
-			logrus.Info("Running sleeper again")
-			// activeIngress := checkPrometheusMetrics(ctx)
-			// actualIngress := checkK8sRegistry(ctx)
-
-			dif := appsToSleep(nil, nil)
-
-			for _, v := range dif {
-				// Notify backend that sleeper will put a new app to sleep
-				err := poster.Post(fmt.Sprintf("sleeping:%s", v), "sleeping")
-				if err != nil {
-					logrus.Errorf("Could not write sleep signal on backend. Error:%v", err)
-				}
-				logrus.Infof("Putting app %s to sleep", v)
-				// go putToSleepOnK8s(ctx, v)
-			}
-		case <-ctx.Done():
-			return
-		}
+func retrieveKubernetesIngresses(ctx context.Context) []string {
+	return []string{
+		"ac-identity/acidentity-staging", "academy/academy-production", "acdc/acdcholiday-staging", "acdc/acdcrequest-staging", "acdc/acdctimesheet-staging", "acdc/acdctravel-staging", "acdc/acdcvacation-staging", "acdc-legacy/acdclegacy-staging", "acdc2/acdc2-staging", "acinsight/acinsightui-staging", "acob/aconboarder-staging", "acpm/acpm-staging", "alphaquester/alphaquester-staging", "default/admission", "default/todo-staging", "eba/eba-production", "eba/eba-staging", "jenkins/jenkins-staging", "kube-system/k8s-dashbord", "miles/miles-staging", "miles/milesui-staging", "mule/mule-production", "mule/mule-staging", "parking/parking-production", "parking/parking-staging", "qa-test/qatest", "sso/sso-staging", "superstars/superstars-staging", "superstars/superstarsfront-staging", "website/acms-staging", "website/website-staging",
 	}
 }
 
@@ -51,15 +43,11 @@ func main() {
 	redis := backend.NewRedisClient("127.0.0.1:6379", "npCYPR7uAt")
 
 	prometheus := NewPrometheusClient()
-
-	prometheus.query(ctx, "rate(nginx_ingress_controller_requests{status=\"200\"}[4h])")
-
-	// try to retrieve some vals
-	_, err := redis.Retrieve("sleeping:default:grafana")
-	must(err)
+	clientSet := mustAuthenticate()
+	deploymentsClient := clientSet.AppsV1()
 
 	logrus.Infoln("Starting sleeper process")
-	go sleeper(ctx, redis)
+	go sleeper(ctx, redis, prometheus, deploymentsClient)
 
 	ctx.Done()
 	<-ctx.Done()

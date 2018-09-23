@@ -75,6 +75,7 @@ func (k KubernetesClient) RetrieveIngresses(ctx context.Context) map[string]bool
 		name := fmt.Sprintf("%s/%s", ingress.Namespace, ingress.Name)
 		ingresses[name] = true
 	}
+	logrus.Infof("AllIngresses total:%d", len(ingresses))
 	return ingresses
 	// return map[string]bool{
 	// 	"ac-identity/acidentity-staging": true, "academy/academy-production": true,

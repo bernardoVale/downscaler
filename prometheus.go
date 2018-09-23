@@ -8,6 +8,7 @@ import (
 	api "github.com/prometheus/client_golang/api"
 	prometheus "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
+	"github.com/sirupsen/logrus"
 )
 
 type IngressCollector interface {
@@ -50,4 +51,14 @@ func (c PrometheusClient) getIngresses(ctx context.Context, query string) (ingre
 		}
 	}
 	return results, nil
+}
+
+func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) map[string]int {
+	//"rate(nginx_ingress_controller_requests{status=\"200\"}[12h])"
+	results, err := collector.getIngresses(ctx, "sum(rate(nginx_ingress_controller_requests{status=\"200\"}[12h])) by (ingress,exported_namespace)")
+	if err != nil {
+		logrus.Errorf("Could not check prometheus metrics:%v", err)
+	}
+	logrus.Infof("ActiveIngresses total:%d", len(results))
+	return results
 }

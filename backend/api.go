@@ -8,3 +8,7 @@ type Retriever interface {
 type Poster interface {
 	Post(key string, value string) error
 }
+
+type MessageReceiver interface {
+	ReceiveMessage() (string, error)
+}

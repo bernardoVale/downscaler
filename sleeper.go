@@ -11,7 +11,7 @@ import (
 )
 
 func sleeper(ctx context.Context, poster backend.Poster, collector IngressCollector, kube checkReceiver) {
-	tick := time.NewTicker(time.Second * 10)
+	tick := time.NewTicker(time.Minute * 2)
 	defer tick.Stop()
 	for {
 		select {
@@ -53,6 +53,6 @@ func sleepCandidates(active map[string]int, all map[string]bool) []string {
 	for k := range all {
 		candidates = append(candidates, k)
 	}
-	logrus.Info("Total candidates ", len(candidates))
+	logrus.Infof("sleepCandidates total:%d", len(candidates))
 	return candidates
 }

@@ -8,20 +8,17 @@ import (
 
 	"github.com/bernardoVale/downscaler/backend"
 	"github.com/sirupsen/logrus"
-	kuberr "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	appsv1 "k8s.io/client-go/kubernetes/typed/apps/v1"
 )
 
-func sleeper(ctx context.Context, poster backend.Poster, collector IngressCollector, kube appsv1.AppsV1Interface) {
+func sleeper(ctx context.Context, poster backend.Poster, collector IngressCollector, kube checkReceiver) {
 	tick := time.NewTicker(time.Second * 10)
 	defer tick.Stop()
 	for {
 		select {
 		case <-tick.C:
-			logrus.Info("Running sleeper again")
-			activeIngress := checkPrometheusMetrics(ctx, collector) //9
-			allIngresses := retrieveKubernetesIngresses(ctx)        // 31
+			logrus.Info("Running sleeper process")
+			activeIngress := checkPrometheusMetrics(ctx, collector)
+			allIngresses := kube.RetrieveIngresses(ctx)
 
 			candidates := sleepCandidates(activeIngress, allIngresses)
 
@@ -31,29 +28,31 @@ func sleeper(ctx context.Context, poster backend.Poster, collector IngressCollec
 				if err != nil {
 					logrus.Errorf("Could not write sleep signal on backend. Error:%v", err)
 				}
-				logrus.Infof("Putting app %s to sleep", v)
+				logrus.Debugf("Putting app %s to sleep", v)
 				app := strings.Split(v, "/")
 				namespace := app[0]
 				ingress := app[1]
-				_, err = kube.Deployments(namespace).Get(ingress, metav1.GetOptions{})
-
-				if err != nil {
-					switch t := err.(type) {
-					default:
-						logrus.Errorf("Some err %v", err)
-					case *kuberr.StatusError:
-						if t.ErrStatus.Reason == "NotFound" {
-							logrus.Infof("Skiping %s. Could not find a deployment with that name", v)
-						}
-					}
-				} else {
-					logrus.Infof("Will put %s to sleep", v)
+				exists := kube.CheckDeployment(ctx, ingress, namespace)
+				if exists {
+					logrus.Infof("Will put %s/%s to sleep", namespace, ingress)
+					// go putToSleepOnK8s(ctx, k)
 				}
-
-				// go putToSleepOnK8s(ctx, k)
 			}
 		case <-ctx.Done():
+			logrus.Info("Shutting down sleeper")
 			return
 		}
 	}
+}
+
+func sleepCandidates(active map[string]int, all map[string]bool) []string {
+	for k := range active {
+		delete(all, k)
+	}
+	candidates := make([]string, 0)
+	for k := range all {
+		candidates = append(candidates, k)
+	}
+	logrus.Info("Total candidates ", len(candidates))
+	return candidates
 }

@@ -12,3 +12,13 @@ type Poster interface {
 type MessageReceiver interface {
 	ReceiveMessage() (string, error)
 }
+
+type PosterRetriever interface {
+	Poster
+	Retriever
+}
+
+type PosterReceiver interface {
+	Poster
+	MessageReceiver
+}

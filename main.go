@@ -12,15 +12,14 @@ func main() {
 	ctx := context.Background()
 	logrus.Info("Estabilishing connection with backend")
 	redis := backend.NewRedisClient("127.0.0.1:6379", "npCYPR7uAt", "wakeup")
+	defer redis.Close()
 
 	prometheus := NewPrometheusClient()
 	clientSet := mustAuthenticate()
 	kubeClient := KubernetesClient{clientSet}
 
-	// checkPrometheusMetrics(ctx, prometheus)
-	logrus.Infoln("Starting sleeper process")
 	go sleeper(ctx, redis, prometheus, kubeClient)
-	go wakeup(ctx, redis)
+	go wakeup(ctx, redis, kubeClient)
 
 	ctx.Done()
 	<-ctx.Done()

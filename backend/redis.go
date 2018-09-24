@@ -25,6 +25,11 @@ func (client RedisClient) ReceiveMessage() (string, error) {
 	return msg.Payload, nil
 }
 
+func (client RedisClient) Close() {
+	client.subscription.Close()
+	client.baseClient.Close()
+}
+
 func NewRedisClient(host string, password string, channel string) RedisClient {
 	client := redis.NewClient(&redis.Options{
 		Addr:     host,

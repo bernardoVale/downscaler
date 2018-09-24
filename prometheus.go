@@ -53,12 +53,13 @@ func (c PrometheusClient) getIngresses(ctx context.Context, query string) (ingre
 	return results, nil
 }
 
-func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) map[string]int {
+func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) (map[string]int, error) {
 	//"rate(nginx_ingress_controller_requests{status=\"200\"}[12h])"
 	results, err := collector.getIngresses(ctx, "sum(rate(nginx_ingress_controller_requests{status=\"200\"}[12h])) by (ingress,exported_namespace)")
 	if err != nil {
 		logrus.Errorf("Could not check prometheus metrics:%v", err)
+		return results, err
 	}
 	logrus.Infof("ActiveIngresses total:%d", len(results))
-	return results
+	return results, nil
 }

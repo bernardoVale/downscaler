@@ -3,39 +3,60 @@ package main
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/bernardoVale/downscaler/backend"
 	"github.com/sirupsen/logrus"
 )
 
-func sleeper(ctx context.Context, poster backend.Poster, collector IngressCollector, kube checkReceiver) {
-	tick := time.NewTicker(time.Minute * 2)
+func sleeper(ctx context.Context, backend backend.PosterRetriever, collector IngressCollector, kube checkPatchReceiver) {
+	logrus.Infoln("Starting sleeper process")
+	tick := time.NewTicker(time.Minute * 1)
 	defer tick.Stop()
 	for {
 		select {
 		case <-tick.C:
 			logrus.Info("Running sleeper process")
-			activeIngress := checkPrometheusMetrics(ctx, collector)
+			activeIngress, err := checkPrometheusMetrics(ctx, collector)
+			if err != nil {
+				logrus.Errorf("Could not retrieve the list of active ingresses. Err: %v", err)
+				break
+			}
 			allIngresses := kube.RetrieveIngresses(ctx)
 
 			candidates := sleepCandidates(activeIngress, allIngresses)
 
 			for _, v := range candidates {
+				i := Ingress(v)
+				queue := fmt.Sprintf("sleeping:%s", i.AsQueue())
+
+				status, err := backend.Retrieve(queue)
+				if err != nil {
+					logrus.Infof("Could not check the status of backend key. Err:%v", err)
+					break
+				}
+
+				if status == "waking_up" {
+					logrus.Infof("Skipping app %v with status waking_up", i)
+					break
+				}
+				// should check if app is waking_up before trying to put it to sleep
 				// Notify backend that sleeper will put a new app to sleep
-				err := poster.Post(fmt.Sprintf("sleeping:%s", v), "sleeping")
+				err = backend.Post(fmt.Sprintf("sleeping:%s", i.AsQueue()), "sleeping")
 				if err != nil {
 					logrus.Errorf("Could not write sleep signal on backend. Error:%v", err)
+					break
 				}
 				logrus.Debugf("Putting app %s to sleep", v)
-				app := strings.Split(v, "/")
-				namespace := app[0]
-				ingress := app[1]
-				exists := kube.CheckDeployment(ctx, ingress, namespace)
+				exists := kube.CheckDeployment(ctx, i.GetName(), i.GetNamespace())
 				if exists {
-					logrus.Infof("Will put %s/%s to sleep", namespace, ingress)
-					// go putToSleepOnK8s(ctx, k)
+					logrus.Debugf("Will put %v to sleep", i)
+					err := kube.PatchDeployment(ctx, i.AsString(), SleepAction)
+					if err != nil {
+						logrus.Errorf("Could not put app %v to sleep. Error %v", i, err)
+						break
+					}
+					logrus.Infof("App %v is now sleeping :)", i)
 				}
 			}
 		case <-ctx.Done():

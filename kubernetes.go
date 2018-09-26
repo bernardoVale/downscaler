@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -23,15 +23,7 @@ const (
 	WakeupAction
 )
 
-func mustAuthenticate() *kubernetes.Clientset {
-	var kubeconfig *string
-	if home := homeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
+func localAuth(kubeconfig *string) *kubernetes.Clientset {
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
@@ -42,6 +34,27 @@ func mustAuthenticate() *kubernetes.Clientset {
 		panic(err.Error())
 	}
 	return clientset
+}
+
+func inClusterAuth() *kubernetes.Clientset {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	return clientset
+}
+
+func mustAuthenticate() *kubernetes.Clientset {
+	home := homeDir()
+	kubeConfigPath := filepath.Join(home, ".kube", "config")
+	if _, err := os.Stat(kubeConfigPath); os.IsNotExist(err) {
+		return inClusterAuth()
+	}
+	return localAuth(&kubeConfigPath)
 }
 
 func homeDir() string {

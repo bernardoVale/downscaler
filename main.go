@@ -12,6 +12,7 @@ func main() {
 
 	backendHost := flag.String("host", "127.0.0.1:6379", "backend host url")
 	backendPassword := flag.String("password", "npCYPR7uAt", "backend password")
+	prometheusURL := flag.String("prometheus-host", "http://localhost:9090", "prometheus host")
 
 	flag.Parse()
 
@@ -21,7 +22,7 @@ func main() {
 	redis := backend.NewRedisClient(*backendHost, *backendPassword, "wakeup")
 	defer redis.Close()
 
-	prometheus := NewPrometheusClient()
+	prometheus := NewPrometheusClient(*prometheusURL)
 	clientSet := mustAuthenticate()
 
 	kubeClient := KubernetesClient{clientSet}

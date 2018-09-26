@@ -19,8 +19,8 @@ type PrometheusClient struct {
 	client prometheus.API
 }
 
-func NewPrometheusClient() PrometheusClient {
-	baseClient, err := api.NewClient(api.Config{Address: "http://localhost:9090"})
+func NewPrometheusClient(host string) PrometheusClient {
+	baseClient, err := api.NewClient(api.Config{Address: host})
 	must(err)
 	return PrometheusClient{client: prometheus.NewAPI(baseClient)}
 }

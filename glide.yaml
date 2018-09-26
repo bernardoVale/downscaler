@@ -3,9 +3,9 @@ import:
 - package: github.com/go-redis/redis
   version: ^6.14.1
 - package: k8s.io/client-go
-  version: kubernetes-1.8
+  version: kubernetes-1.11.1
 - package: k8s.io/apimachinery
-  version: kubernetes-1.8
+  version: kubernetes-1.11.1
   subpackages:
   - kubernetes
   - tools/clientcmd

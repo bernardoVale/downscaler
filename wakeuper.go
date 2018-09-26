@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func wakeup(ctx context.Context, posterReceiver backend.PosterReceiver, wakeuper PatchDeployer) {
+func wakeup(ctx context.Context, posterReceiver backend.PosterReceiver, wakeuper PatchDeployer, awake chan<- Ingress) {
 	logrus.Info("Starting wakeuper process")
 	for {
 		select {
@@ -34,10 +34,8 @@ func wakeup(ctx context.Context, posterReceiver backend.PosterReceiver, wakeuper
 				logrus.Errorf("Wakeuper - Could not Post app %v new status (waking_up). Err:%v", i, err)
 				break
 			}
-			err = posterReceiver.Publish("awake", i.AsString())
-			if err != nil {
-				logrus.Errorf("Wakeuper - Could not publish awake notification for App %v. Err:%v", i, err)
-			}
+			// Notify awaker watcher
+			awake <- i
 		}
 	}
 }

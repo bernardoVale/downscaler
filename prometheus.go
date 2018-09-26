@@ -55,7 +55,7 @@ func (c PrometheusClient) getIngresses(ctx context.Context, query string) (ingre
 
 func checkPrometheusMetrics(ctx context.Context, collector IngressCollector) (map[string]int, error) {
 	//"rate(nginx_ingress_controller_requests{status=\"200\"}[12h])"
-	results, err := collector.getIngresses(ctx, "sum(rate(nginx_ingress_controller_requests{status=\"200\"}[5m])) by (ingress,exported_namespace)")
+	results, err := collector.getIngresses(ctx, "sum(rate(nginx_ingress_controller_requests{status=\"200\"}[12h])) by (ingress,exported_namespace)")
 	if err != nil {
 		logrus.Errorf("Could not check prometheus metrics:%v", err)
 		return results, err

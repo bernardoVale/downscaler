@@ -17,6 +17,10 @@ func (client RedisClient) Retrieve(key string) (string, error) {
 	return client.baseClient.Get(key).Result()
 }
 
+func (client RedisClient) Delete(key string) error {
+	return client.baseClient.Del(key).Err()
+}
+
 func (client RedisClient) Post(key string, value string, ttl time.Duration) error {
 	return client.baseClient.Set(key, value, ttl).Err()
 }

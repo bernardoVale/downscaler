@@ -11,6 +11,10 @@ type Poster interface {
 	Post(key string, value string, ttl time.Duration) error
 }
 
+type Deleter interface {
+	Delete(key string) error
+}
+
 type Publisher interface {
 	Publish(channel string, message string) error
 }
@@ -27,5 +31,4 @@ type PosterRetriever interface {
 type PosterReceiver interface {
 	Poster
 	MessageReceiver
-	Publisher
 }

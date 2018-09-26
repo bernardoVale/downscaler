@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/sirupsen/logrus"
+	appsv1 "k8s.io/api/apps/v1"
 	kuberr "k8s.io/apimachinery/pkg/api/errors"
 	apiv1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,6 +72,10 @@ type checkPatchReceiver interface {
 	PatchDeployer
 }
 
+type getDeployment interface {
+	GetDeployment(name string, namespace string) (deployment *appsv1.Deployment, err error)
+}
+
 // PatchDeployer describes the ability to patch a Kubernetes deployer
 type PatchDeployer interface {
 	PatchDeployment(ctx context.Context, app string, action Action) error
@@ -100,9 +105,17 @@ func (k KubernetesClient) RetrieveIngresses(ctx context.Context) map[string]bool
 	// }
 }
 
+func (k KubernetesClient) GetDeployment(name string, namespace string) (deployment *appsv1.Deployment, err error) {
+	apps := k.client.AppsV1()
+	return apps.Deployments(namespace).Get(name, metav1.GetOptions{})
+	// deploy.Spec.Replicas
+	// deploy.Status.ReadyReplicas
+}
+
 func (k KubernetesClient) CheckDeployment(ctx context.Context, name string, namespace string) bool {
 	apps := k.client.AppsV1()
 	_, err := apps.Deployments(namespace).Get(name, metav1.GetOptions{})
+
 	if err != nil {
 		switch t := err.(type) {
 		default:

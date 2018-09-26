@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bernardoVale/downscaler/backend"
+	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,8 +33,10 @@ func sleeper(ctx context.Context, backend backend.PosterRetriever, collector Ing
 
 				status, err := backend.Retrieve(queue)
 				if err != nil {
-					logrus.Infof("Could not check the status of backend key. Err:%v", err)
-					break
+					if err != redis.Nil {
+						logrus.Infof("Could not check the status of backend key. Err:%v", err)
+						break
+					}
 				}
 
 				if status == "waking_up" {
@@ -42,7 +45,7 @@ func sleeper(ctx context.Context, backend backend.PosterRetriever, collector Ing
 				}
 				// should check if app is waking_up before trying to put it to sleep
 				// Notify backend that sleeper will put a new app to sleep
-				err = backend.Post(fmt.Sprintf("sleeping:%s", i.AsQueue()), "sleeping")
+				err = backend.Post(fmt.Sprintf("sleeping:%s", i.AsQueue()), "sleeping", 0)
 				if err != nil {
 					logrus.Errorf("Could not write sleep signal on backend. Error:%v", err)
 					break

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bernardoVale/downscaler/backend"
 	"github.com/sirupsen/logrus"
@@ -27,10 +28,15 @@ func wakeup(ctx context.Context, posterReceiver backend.PosterReceiver, wakeuper
 				logrus.Errorf("Failed to scale deployment. Err: %v", err)
 				break
 			}
-			err = posterReceiver.Post(fmt.Sprintf("sleeping:%s", i.AsQueue()), "waking_up")
+			// Up to 20 min
+			err = posterReceiver.Post(fmt.Sprintf("sleeping:%s", i.AsQueue()), "waking_up", time.Minute*20)
 			if err != nil {
 				logrus.Errorf("Wakeuper - Could not Post app %v new status (waking_up). Err:%v", i, err)
 				break
+			}
+			err = posterReceiver.Publish("awake", i.AsString())
+			if err != nil {
+				logrus.Errorf("Wakeuper - Could not publish awake notification for App %v. Err:%v", i, err)
 			}
 		}
 	}

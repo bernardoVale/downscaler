@@ -144,8 +144,45 @@ func (k KubernetesClient) PatchDeployment(ctx context.Context, app string, actio
 		}
 		desiredReplicas = 0
 	}
+	logrus.Infof("Set desired replicas to %d", desiredReplicas)
 	deployment.Spec.Replicas = int32Ptr(desiredReplicas)
-	_, err = k.client.AppsV1().Deployments(i.GetNamespace()).Update(deployment)
+
+	deployment, err = k.client.AppsV1().Deployments(i.GetNamespace()).Update(deployment)
+
+	if err != nil {
+		logrus.Errorf("Could not patch deployment. Err: %v", err)
+		return err
+	}
+
+	// watcher, err := k.client.AppsV1beta2().Deployments(i.GetNamespace()).Watch(metav1.SingleObject(deployment.ObjectMeta))
+
+	// if err != nil {
+	// 	logrus.Errorf("Could not watch deployment. Err: %v", err)
+	// 	return err
+	// }
+
+	// logrus.Info("Watching deployment patch")
+	// for event := range watcher.ResultChan() {
+	// 	switch event.Type {
+	// 	case watch.Modified:
+	// 		d := event.Object.(*v1beta2.Deployment)
+	// 		for _, cond := range d.Status.Conditions {
+	// 			if cond.Type == v1beta2.DeploymentProgressing {
+	// 				logrus.Info("Waiting deployment")
+	// 			}
+
+	// 			if cond.Type == v1beta2.DeploymentAvailable {
+	// 				logrus.Infof("Replicas: %d", d.Status.Replicas)
+	// 				logrus.Infof("Available: %d", d.Status.AvailableReplicas)
+	// 				logrus.Infof("Readey: %d", d.Status.ReadyReplicas)
+	// 				if d.Status.ReadyReplicas == d.Status.AvailableReplicas {
+	// 					logrus.Info("Deployment is ready")
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	return err
 }
 

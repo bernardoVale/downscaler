@@ -1,6 +1,10 @@
 package backend
 
-import redis "github.com/go-redis/redis"
+import (
+	"time"
+
+	redis "github.com/go-redis/redis"
+)
 
 // RedisClient represents a client connnection with a redis backend
 type RedisClient struct {
@@ -13,8 +17,12 @@ func (client RedisClient) Retrieve(key string) (string, error) {
 	return client.baseClient.Get(key).Result()
 }
 
-func (client RedisClient) Post(key string, value string) error {
-	return client.baseClient.Set(key, value, 0).Err()
+func (client RedisClient) Post(key string, value string, ttl time.Duration) error {
+	return client.baseClient.Set(key, value, ttl).Err()
+}
+
+func (client RedisClient) Publish(channel string, message string) error {
+	return client.baseClient.Publish(channel, message).Err()
 }
 
 func (client RedisClient) ReceiveMessage() (string, error) {

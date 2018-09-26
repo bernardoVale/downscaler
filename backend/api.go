@@ -1,12 +1,18 @@
 package backend
 
+import "time"
+
 // Retriever represents the ability to retrieve the value of a key
 type Retriever interface {
 	Retrieve(key string) (string, error)
 }
 
 type Poster interface {
-	Post(key string, value string) error
+	Post(key string, value string, ttl time.Duration) error
+}
+
+type Publisher interface {
+	Publish(channel string, message string) error
 }
 
 type MessageReceiver interface {
@@ -21,4 +27,5 @@ type PosterRetriever interface {
 type PosterReceiver interface {
 	Poster
 	MessageReceiver
+	Publisher
 }

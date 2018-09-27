@@ -10,7 +10,7 @@ metadata:
   name: {{ template "downscaler.fullname" . }}
 rules:
 - apiGroups:
-  - ""
+  - "*"
   resources:
   - deployments
   verbs:

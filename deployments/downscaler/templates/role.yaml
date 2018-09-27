@@ -1,0 +1,33 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  labels:
+    app: {{ template "downscaler.name" . }}
+    chart: {{ template "downscaler.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "downscaler.fullname" . }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - deployments
+  verbs:
+  - get
+  - update
+  - patch
+  - list
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - update
+  - create
+  - list
+  - patch
+  - delete
+  - watch
+{{- end -}}

@@ -1,0 +1,20 @@
+
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: {{ template "downscaler.name" . }}
+    chart: {{ template "downscaler.chart" . }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ template "downscaler.fullname" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "downscaler.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.downscaler.serviceAccountName }}
+    namespace: {{ .Release.Namespace }}
+{{- end -}}

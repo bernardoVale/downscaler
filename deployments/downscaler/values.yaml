@@ -19,7 +19,7 @@ downscaler:
     host: redis-master.default:6379
     password: rKOsaUDIRK
   prometheus:
-    host: prometheus-k8s.monitoring
+    host: http://prometheus-service.default:9090
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

@@ -12,7 +12,7 @@ import (
 
 func sleeper(ctx context.Context, backend backend.PosterRetriever, collector IngressCollector, kube checkPatchReceiver) {
 	logrus.Infoln("Starting sleeper process")
-	tick := time.NewTicker(time.Minute * 1)
+	tick := time.NewTicker(time.Hour * 2)
 	defer tick.Stop()
 	for {
 		select {

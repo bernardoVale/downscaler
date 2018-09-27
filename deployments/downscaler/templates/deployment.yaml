@@ -23,7 +23,7 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["/downscaler", "-host", "{{ .Values.downscaler.backend.host }}", "-password", "{{ .Values.downscaler.backend.password }}"]
+          command: ["/downscaler", "-host", "{{ .Values.downscaler.backend.host }}", "-password", "{{ .Values.downscaler.backend.password }}", "-prometheus-host", "{{ .Values.downscaler.prometheus.host }}"]
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}

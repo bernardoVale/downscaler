@@ -8,12 +8,12 @@ import (
 func Test_sleepCandidates(t *testing.T) {
 	type args struct {
 		active map[string]int
-		all    map[string]bool
+		all    map[string]string
 	}
 	tests := []struct {
 		name string
 		args args
-		want []string
+		want map[string]string
 	}{
 		{
 			name: "Should return only ingresses that are not active",
@@ -21,11 +21,11 @@ func Test_sleepCandidates(t *testing.T) {
 				active: map[string]int{
 					"foo/bar": 1, "bar/bar": 1,
 				},
-				all: map[string]bool{
-					"bar/bar": true, "hey/go": true, "foo/bar": true,
+				all: map[string]string{
+					"bar/bar": "bar/bar", "hey/go": "hey/go", "foo/bar": "foo/bar",
 				},
 			},
-			want: []string{"hey/go"},
+			want: map[string]string{"hey/go": "hey/go"},
 		},
 	}
 	for _, tt := range tests {

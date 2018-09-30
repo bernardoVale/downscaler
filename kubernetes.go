@@ -132,7 +132,7 @@ func (k KubernetesClient) CheckDeployment(ctx context.Context, name string, name
 	if err != nil {
 		switch t := err.(type) {
 		default:
-			logrus.Errorf("Some err %v", err)
+			logrus.Errorf("Some err: %v", err)
 			return false
 		case *kuberr.StatusError:
 			if t.ErrStatus.Reason == "NotFound" {

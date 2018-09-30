@@ -71,7 +71,7 @@ type KubernetesClient struct {
 
 // IngressRetriever defines the capability of retrieving a map of ingresses
 type IngressRetriever interface {
-	RetrieveIngresses(ctx context.Context) map[string]bool
+	RetrieveIngresses(ctx context.Context) map[string]string
 }
 
 // DeploymentChecker defines the behavior of checking if a given deployment exists
@@ -94,9 +94,9 @@ type PatchDeployer interface {
 	PatchDeployment(ctx context.Context, app string, action Action) error
 }
 
-func (k KubernetesClient) RetrieveIngresses(ctx context.Context) map[string]bool {
+func (k KubernetesClient) RetrieveIngresses(ctx context.Context) map[string]string {
 	logrus.Info("Retrieving ingress list")
-	ingresses := make(map[string]bool, 0)
+	ingresses := make(map[string]string, 0)
 	ingressList, err := k.client.ExtensionsV1beta1().Ingresses(metav1.NamespaceAll).List(apiv1.ListOptions{
 		LabelSelector: "downscaler.active=true",
 	})
@@ -106,16 +106,16 @@ func (k KubernetesClient) RetrieveIngresses(ctx context.Context) map[string]bool
 	}
 	for _, ingress := range ingressList.Items {
 		name := fmt.Sprintf("%s/%s", ingress.Namespace, ingress.Name)
-		ingresses[name] = true
+		deployment := name // set ingress name by default
+		// Use the name provided by user on downscaler/deployments if
+		// the annotation exists
+		if val, ok := ingress.Annotations["downscaler/deployments"]; ok {
+			deployment = val
+		}
+		ingresses[name] = deployment
 	}
 	logrus.Infof("AllIngresses total:%d", len(ingresses))
 	return ingresses
-	// return map[string]bool{
-	// 	"ac-identity/acidentity-staging": true, "academy/academy-production": true,
-	// 	"acdc/acdcholiday-staging": true, "acdc/acdcrequest-staging": true,
-	// 	"acdc/acdctimesheet-staging": true, "acdc/acdctravel-staging": true,
-	// 	"acdc/acdcvacation-staging": true, "acdc-legacy/acdclegacy-staging": true,
-	// }
 }
 
 func (k KubernetesClient) GetDeployment(name string, namespace string) (deployment *appsv1.Deployment, err error) {

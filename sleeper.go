@@ -7,12 +7,13 @@ import (
 
 	"github.com/bernardoVale/downscaler/backend"
 	"github.com/go-redis/redis"
+	"github.com/rusenask/k8s-kv/kv"
 	"github.com/sirupsen/logrus"
 )
 
 func sleeper(ctx context.Context, backend backend.PosterRetriever, collector IngressCollector, kube checkPatchReceiver) {
 	logrus.Infoln("Starting sleeper process")
-	tick := time.NewTicker(time.Hour * 2)
+	tick := time.NewTicker(time.Second * 5)
 	defer tick.Stop()
 	for {
 		select {
@@ -33,7 +34,7 @@ func sleeper(ctx context.Context, backend backend.PosterRetriever, collector Ing
 
 				status, err := backend.Retrieve(queue)
 				if err != nil {
-					if err != redis.Nil {
+					if err != redis.Nil && err != kv.ErrNotFound {
 						logrus.Infof("Could not check the status of backend key. Err:%v", err)
 						break
 					}

@@ -19,6 +19,10 @@ type Publisher interface {
 	Publish(channel string, message string) error
 }
 
+type Lister interface {
+	List(pattern string) (map[string]string, error)
+}
+
 type MessageReceiver interface {
 	ReceiveMessage() (string, error)
 }

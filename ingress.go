@@ -7,7 +7,7 @@ import (
 // Ingress defines a Kubernetes ingress fullname: namespace/name
 type Ingress string
 
-func (i Ingress) AsString() string {
+func (i Ingress) String() string {
 	return string(i)
 }
 

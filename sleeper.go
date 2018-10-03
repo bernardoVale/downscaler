@@ -13,7 +13,7 @@ import (
 
 func sleeper(ctx context.Context, backend backend.PosterRetriever, collector IngressCollector, kube checkPatchReceiver) {
 	logrus.Infoln("Starting sleeper process")
-	tick := time.NewTicker(time.Second * 5)
+	tick := time.NewTicker(time.Hour * 2)
 	defer tick.Stop()
 	for {
 		select {
@@ -55,7 +55,7 @@ func sleeper(ctx context.Context, backend backend.PosterRetriever, collector Ing
 				exists := kube.CheckDeployment(ctx, i.GetName(), i.GetNamespace())
 				if exists {
 					logrus.Debugf("Will put %v to sleep", i)
-					err := kube.PatchDeployment(ctx, i.AsString(), SleepAction)
+					err := kube.PatchDeployment(i.String(), SleepAction)
 					if err != nil {
 						logrus.Errorf("Could not put app %v to sleep. Error %v", i, err)
 						break

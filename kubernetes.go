@@ -89,9 +89,14 @@ type getDeployment interface {
 	GetDeployment(name string, namespace string) (deployment *appsv1.Deployment, err error)
 }
 
+type getPatchDeployment interface {
+	getDeployment
+	PatchDeployer
+}
+
 // PatchDeployer describes the ability to patch a Kubernetes deployer
 type PatchDeployer interface {
-	PatchDeployment(ctx context.Context, app string, action Action) error
+	PatchDeployment(app string, action Action) error
 }
 
 func (k KubernetesClient) RetrieveIngresses(ctx context.Context) map[string]bool {
@@ -144,7 +149,7 @@ func (k KubernetesClient) CheckDeployment(ctx context.Context, name string, name
 	return true
 }
 
-func (k KubernetesClient) PatchDeployment(ctx context.Context, app string, action Action) error {
+func (k KubernetesClient) PatchDeployment(app string, action Action) error {
 	var desiredReplicas int32
 
 	i := Ingress(app)

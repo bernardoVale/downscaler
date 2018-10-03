@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"net/http"
 
 	"github.com/bernardoVale/downscaler/backend"
 	"github.com/rusenask/k8s-kv/kv"
@@ -18,7 +20,7 @@ func main() {
 	flag.Parse()
 
 	ctx := context.Background()
-	// awakeChan := make(chan Ingress)
+	awakeChan := make(chan Ingress)
 	logrus.Info("Estabilishing connection with backend")
 	redis := backend.NewRedisClient(*backendHost, *backendPassword, "wakeup")
 	defer redis.Close()
@@ -27,26 +29,17 @@ func main() {
 	clientSet := mustAuthenticate()
 
 	impl := clientSet.Core().ConfigMaps("default")
-	kvdb, err := kv.New(impl, "my-app", "downscaler-state")
+	kvdb, err := kv.New(impl, "downscaler", "downscaler-state")
 	must(err)
 	backendCli := backend.NewKubernetesClient(kvdb)
-
-	data, err := kvdb.List("sleeping")
-	must(err)
-	for k, v := range data {
-		logrus.Infof("key: %s Value: %s", k, string(v))
-	}
-
-	// kvdb.Put("foo", []byte("hello kubernetes world"))
-
-	// stored, _ := kvdb.Get("foo")
-	// logrus.Infof("Data stored: %s", string(stored))
 
 	kubeClient := KubernetesClient{clientSet}
 
 	go sleeper(ctx, backendCli, prometheus, kubeClient)
-	go wakeup(ctx, redis, kubeClient, awakeChan)
-	// go awaker(ctx, redis, kubeClient, awakeChan)
+	go awaker(ctx, backendCli, kubeClient, awakeChan)
+	http.HandleFunc("/wakeup", wakeupHandler(backendCli, awakeChan))
+	http.HandleFunc("/status", statusHandler(backendCli))
+	http.ListenAndServe(fmt.Sprintf(":8080"), nil)
 
 	<-ctx.Done()
 }

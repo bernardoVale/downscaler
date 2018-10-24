@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "downscaler.name" . }}
+data:
+  downscaler.yml: |-
+    backend:
+      host: {{- if .Values.redis.enabled }} {{ .Release.Name }}-redis-master:6379{{- else }} {{ .Values.downscaler.backend.host }}{{ end }}
+    metrics:
+      host: {{- if .Values.prometheus.enabled }} http://{{ .Release.Name }}-prometheus-server:80{{- else }} {{ .Values.downscaler.metrics.host }}{{ end }}
+    sleeper:
+      interval: {{ .Values.downscaler.sleeper.interval }}
+      max:
+        idle: {{ .Values.downscaler.sleeper.max.idle }}

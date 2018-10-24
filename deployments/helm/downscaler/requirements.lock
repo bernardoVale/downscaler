@@ -1,0 +1,9 @@
+dependencies:
+- name: redis
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  version: 4.2.1
+- name: prometheus
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  version: 7.3.1
+digest: sha256:2e7b90eac17f02c064c911da6c0a4374c3a3495fafabd8a1aee7f4d0b753b972
+generated: 2018-10-21T11:37:04.658421011-03:00

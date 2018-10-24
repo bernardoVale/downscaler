@@ -1,0 +1,9 @@
+dependencies:
+  - name: redis
+    version: 4.2.1
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    condition: redis.enabled
+  - name: prometheus
+    version: 7.3.1
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    condition: prometheus.enabled

@@ -1,11 +1,12 @@
-{{- $name := include "downscaler.name" . -}}
+{{- $name := include "downscaler.backend.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "downscaler.fullname" . }}
+  name: {{ $name }}
   labels:
     app: {{ $name }}
     chart: {{ template "downscaler.chart" . }}
+    component: {{ .Values.backend.name }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
@@ -14,30 +15,27 @@ spec:
     matchLabels:
       app: {{ $name }}
       release: {{ .Release.Name }}
+      component: {{ .Values.backend.name }}
   template:
     metadata:
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/secrets: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
         app: {{ $name }}
         release: {{ .Release.Name }}
+        component: {{ .Values.backend.name }}
     spec:
-      serviceAccountName: {{ .Values.downscaler.serviceAccountName | quote }}
-      volumes:
-        - name: {{ $name }}-config
-          configMap:
-            name: {{ $name }}
       containers:
-        - name: {{ .Chart.Name }}
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: {{ .Chart.Name }}-{{ .Values.backend.name }}
+          image: {{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: BACKEND_HOST
+              value: {{- if .Values.redis.enabled }} {{ .Release.Name }}-redis-master:6379{{- else }} {{ .Values.backend.config.host }}{{ end }}
           envFrom:
             - secretRef:
                 name: {{ $name }}
-          volumeMounts:
-            - name: {{ $name }}-config
-              mountPath: /etc/downscaler
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}

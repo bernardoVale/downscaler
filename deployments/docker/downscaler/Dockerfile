@@ -1,8 +1,7 @@
 FROM scratch
 
-COPY ./downscaler /downscaler
+COPY ./downscaler.linux /downscaler
 
 EXPOSE 8080
-ENV DEBUG=true
 
 ENTRYPOINT [ "/downscaler" ]

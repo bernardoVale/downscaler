@@ -9,17 +9,90 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+backend:
+  name: backend
+  image:
+    repository: bernardovale/default-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  config: # fill if redis.enabled=false
+    host: ""
+    password: ""
+
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+
 service:
   type: ClusterIP
   port: 80
 
 downscaler:
   serviceAccountName: downscaler
-  backend:
-    host: redis-master.default:6379
-    password: rKOsaUDIRK
-  prometheus:
-    host: http://prometheus-service.default:9090
+  backend: # Fill if redis.enabled=false
+    host:
+    password: ""
+  metrics: # Fill if prometheus.enabled=false
+    host:
+  sleeper:
+    interval: 4h
+    max:
+      idle: 10h
+
+# Install stable/redis chart as a dependency
+redis:
+  enabled: true
+  usePassword: false
+  cluster:
+    enabled: false
+
+# Install stable/prometheus chart as a dependency
+prometheus:
+  enabled: true
+  alertmanager:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  pushgateway:
+    enabled: false
+
+  serverFiles:
+    alerts: {}
+    rules: {}
+    prometheus.yml:
+      rule_files:
+        - /etc/config/rules
+        - /etc/config/alerts
+      scrape_configs:
+        - job_name: 'ingress-nginx-endpoints'
+          scrape_interval: 5s
+          kubernetes_sd_configs:
+          - role: pod
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+
+          - source_labels: [__meta_kubernetes_service_name]
+            regex: prometheus-service
+            action: drop
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -38,3 +111,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+rbac:
+  create: true

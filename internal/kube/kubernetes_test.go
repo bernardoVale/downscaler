@@ -1,4 +1,4 @@
-package main
+package kube
 
 // func TestKubernetesClient_RetrieveIngresses(t *testing.T) {
 // 	client := fake.NewSimpleClientset()

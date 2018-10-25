@@ -77,11 +77,9 @@ func main() {
 	}
 
 	http.HandleFunc("/", errorHandler(client, await))
-
 	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
-
 	http.ListenAndServe(fmt.Sprintf(":8080"), nil)
 }
 

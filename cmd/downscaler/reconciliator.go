@@ -15,7 +15,7 @@ func reconciliate(ctx context.Context, backend storage.PostSearcher, kube kube.G
 	logger := logrus.WithField("method", "reconciliator")
 	logger.Info("Starting reconciliator")
 
-	keys, err := backend.KeysByValue("sleeping:*:*", "waking_up")
+	keys, err := backend.KeysByValue("downscaler:*:*", "waking_up")
 
 	logger.Infof("%d apps to reconciliate", len(keys))
 	if err != nil {

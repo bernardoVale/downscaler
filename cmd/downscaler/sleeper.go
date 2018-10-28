@@ -44,24 +44,31 @@ func sleeper(c sleeperConfig, backend storage.PosterRetriever, metrics metrics.C
 						break
 					}
 				}
-
-				if status == "waking_up" {
+				switch status {
+				case "waking_up":
 					logger.WithField("app", app).Info("Skipping app with status waking_up")
-					break
+					continue
+				case "sleeping":
+					logger.WithField("app", app).Info("Skipping app with status sleeping")
+					continue
 				}
 				// should check if app is waking_up before trying to put it to sleep
 				// Notify backend that sleeper will put a new app to sleep
 				err = backend.Post(app.Key(), "sleeping", sleepingTTL)
 				if err != nil {
 					logger.WithError(err).Error("Could not write sleep signal on backend.")
+					sleepingErr.Inc()
 					break
 				}
 				err = kube.Scale(app.Namespace(), app.Name(), types.ScaleDown)
 				if err != nil {
 					logger.WithError(err).WithField("app", app).Error("Could not put app to sleep")
+					sleepingErr.Inc()
 					break
 				}
 				logger.WithField("app", app).Info("App is now sleeping :)")
+				sleepingGauge.Inc()
+				sleepingCounter.Inc()
 			}
 		}
 	}

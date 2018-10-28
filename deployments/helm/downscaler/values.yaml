@@ -26,16 +26,23 @@ backend:
     annotations: {}
 
 service:
+  annotations:
+    prometheus.io/port: "9090"
+    prometheus.io/scrape: "true"
+    prometheus.io/name: "downscaler"
   type: ClusterIP
   port: 80
 
 downscaler:
+  metricsPort: 9090
   serviceAccountName: downscaler
   backend: # Fill if redis.enabled=false
     host:
     password: ""
   metrics: # Fill if prometheus.enabled=false
     host:
+    expvars: # Internal Metrics
+      bind: :9090
   sleeper:
     interval: 4h
     max:
@@ -68,11 +75,47 @@ prometheus:
         - /etc/config/rules
         - /etc/config/alerts
       scrape_configs:
+        - job_name: 'downscaler-endpoints'
+          scrape_interval: 5s
+          kubernetes_sd_configs:
+          - role: pod
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            separator: ;
+            regex: downscaler
+            replacement: $1
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (https?)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+
+          - source_labels: [__meta_kubernetes_service_name]
+            regex: prometheus-service
+            action: drop
+
         - job_name: 'ingress-nginx-endpoints'
           scrape_interval: 5s
           kubernetes_sd_configs:
           - role: pod
           relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            separator: ;
+            regex: nginx-ingress-controller
+            replacement: $1
+            action: keep
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
             regex: true

@@ -26,15 +26,18 @@ func wakeuper(ctx context.Context, posterReceiver storage.PosterReceiver, kube k
 			err = kube.Scale(app.Namespace(), app.Name(), types.ScaleUp)
 			if err != nil {
 				logger.WithError(err).Error("Failed to scale app")
+				wakingUpErr.Inc()
 				return
 			}
 			// Up to 20 min
 			err = posterReceiver.Post(app.Key(), "waking_up", wakingUpTTL)
 			if err != nil {
 				logger.WithError(err).WithField("app", app).Error("Could not post app new status: waking_up")
+				wakingUpErr.Inc()
 				return
 			}
 			// Notify awaker watcher if needed otherwise set status to awake
+			wakingUpCounter.Inc()
 			awakeWatcher(ctx, posterReceiver, kube, app)
 		}()
 	}

@@ -7,9 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"net/http"
+
 	"github.com/bernardoVale/downscaler/internal/kube"
 	"github.com/bernardoVale/downscaler/internal/metrics"
 	"github.com/bernardoVale/downscaler/internal/storage"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -20,6 +25,61 @@ var (
 		"/etc/downscaler",
 		"$HOME/downscaler",
 	}
+	reconciliatorCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "reconciliator",
+		Namespace: "downscaler",
+		Help:      "Counts reconciliator actions",
+	})
+	reconciliatorErrCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "reconciliator",
+		Namespace: "downscaler",
+		Help:      "Counts reconciliator errors",
+	})
+	wakingUpCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "wakingup",
+		Namespace: "downscaler",
+		Help:      "Counts waking up actions",
+	})
+	wakingUpErr = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "wakingup",
+		Namespace: "downscaler",
+		Help:      "Counts waking up actions",
+	})
+	awakeCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "awake",
+		Namespace: "downscaler",
+		Help:      "Counts awake actions",
+	})
+	awakeErr = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "awake",
+		Namespace: "downscaler",
+		Help:      "Counts awake actions",
+	})
+	sleepingCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "sleeping",
+		Namespace: "downscaler",
+		Help:      "Counts sleeper actions",
+	})
+	sleepingErr = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "sleeping",
+		Namespace: "downscaler",
+		Help:      "Counts sleeper actions",
+	})
+
+	sleepingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name:      "sleeping",
+		Subsystem: "apps",
+		Namespace: "downscaler",
+		Help:      "Apps sleeping",
+	})
 )
 
 func init() {
@@ -31,6 +91,8 @@ func init() {
 	viper.SetDefault("metrics.host", "http://localhost:9090")
 	viper.SetDefault("sleeper.interval", "4h")
 	viper.SetDefault("sleeper.max.idle", "10h")
+	viper.SetDefault("debug", false)
+	viper.SetDefault("metrics.expvars.bind", ":9090")
 
 	viper.SetConfigName("downscaler")
 	viper.SetConfigType("yaml")
@@ -40,6 +102,16 @@ func init() {
 		viper.AddConfigPath(p)
 	}
 	mustWithMsg(viper.ReadInConfig(), "Could not read config")
+
+	prometheus.MustRegister(reconciliatorCounter)
+	prometheus.MustRegister(reconciliatorErrCounter)
+	prometheus.MustRegister(sleepingGauge)
+	prometheus.MustRegister(wakingUpCounter)
+	prometheus.MustRegister(wakingUpErr)
+	prometheus.MustRegister(awakeCounter)
+	prometheus.MustRegister(awakeErr)
+	prometheus.MustRegister(sleepingCounter)
+	prometheus.MustRegister(sleepingErr)
 }
 
 func main() {
@@ -80,8 +152,6 @@ func main() {
 	redis := storage.NewRedisClient(backendHost, backendPassword, "wakeup")
 	defer redis.Close()
 
-	mustWithMsg(redis.MigrateKeys("sleeping", "downscaler"), "could not migrate redis keys")
-
 	//abscure code, if metrics.host is a file use fakeMetrics
 	var metricsClient metrics.Client
 	if _, err := os.Stat(prometheusURL); os.IsNotExist(err) {
@@ -93,6 +163,11 @@ func main() {
 
 	kubeClient, err := kube.NewKubernetesClient()
 	mustWithMsg(err, "Failed to create a Kubernetes client")
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		mustWithMsg(http.ListenAndServe(viper.GetString("metrics.expvars.bind"), nil), "could not expose metrics")
+	}()
 
 	// Reconciliate first
 	reconciliate(ctx, redis, kubeClient)

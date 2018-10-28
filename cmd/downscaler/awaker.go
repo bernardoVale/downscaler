@@ -22,6 +22,7 @@ func awakeWatcher(ctx context.Context, poster storage.Poster, getter kube.GetDep
 
 			deploy, err := getter.Get(app.Name(), app.Namespace())
 			if err != nil {
+				awakeErr.Inc()
 				logger.WithError(err).Errorf("Failed to get deployment")
 			}
 			logger.Infof("Desired: %d Ready: %d", *deploy.Spec.Replicas, deploy.Status.ReadyReplicas)
@@ -35,9 +36,11 @@ func awakeWatcher(ctx context.Context, poster storage.Poster, getter kube.GetDep
 				err := poster.Post(app.Key(), "awake", awakeTTL)
 				if err != nil {
 					logger.WithError(err).Panicf("Could not set backend status to awake. Key: %s", app.Key())
+					awakeErr.Inc()
 					panic(err)
 				}
 				sleepingGauge.Dec()
+				awakeCounter.Inc()
 				return
 			}
 		case <-ctx.Done():

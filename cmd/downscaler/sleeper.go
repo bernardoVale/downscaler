@@ -57,15 +57,18 @@ func sleeper(c sleeperConfig, backend storage.PosterRetriever, metrics metrics.C
 				err = backend.Post(app.Key(), "sleeping", sleepingTTL)
 				if err != nil {
 					logger.WithError(err).Error("Could not write sleep signal on backend.")
+					sleepingErr.Inc()
 					break
 				}
 				err = kube.Scale(app.Namespace(), app.Name(), types.ScaleDown)
 				if err != nil {
 					logger.WithError(err).WithField("app", app).Error("Could not put app to sleep")
+					sleepingErr.Inc()
 					break
 				}
 				logger.WithField("app", app).Info("App is now sleeping :)")
 				sleepingGauge.Inc()
+				sleepingCounter.Inc()
 			}
 		}
 	}

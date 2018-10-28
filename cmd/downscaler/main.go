@@ -37,6 +37,42 @@ var (
 		Namespace: "downscaler",
 		Help:      "Counts reconciliator errors",
 	})
+	wakingUpCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "wakingup",
+		Namespace: "downscaler",
+		Help:      "Counts waking up actions",
+	})
+	wakingUpErr = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "wakingup",
+		Namespace: "downscaler",
+		Help:      "Counts waking up actions",
+	})
+	awakeCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "awake",
+		Namespace: "downscaler",
+		Help:      "Counts awake actions",
+	})
+	awakeErr = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "awake",
+		Namespace: "downscaler",
+		Help:      "Counts awake actions",
+	})
+	sleepingCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "count",
+		Subsystem: "sleeping",
+		Namespace: "downscaler",
+		Help:      "Counts sleeper actions",
+	})
+	sleepingErr = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "errors",
+		Subsystem: "sleeping",
+		Namespace: "downscaler",
+		Help:      "Counts sleeper actions",
+	})
 
 	sleepingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name:      "sleeping",
@@ -70,6 +106,12 @@ func init() {
 	prometheus.MustRegister(reconciliatorCounter)
 	prometheus.MustRegister(reconciliatorErrCounter)
 	prometheus.MustRegister(sleepingGauge)
+	prometheus.MustRegister(wakingUpCounter)
+	prometheus.MustRegister(wakingUpErr)
+	prometheus.MustRegister(awakeCounter)
+	prometheus.MustRegister(awakeErr)
+	prometheus.MustRegister(sleepingCounter)
+	prometheus.MustRegister(sleepingErr)
 }
 
 func main() {

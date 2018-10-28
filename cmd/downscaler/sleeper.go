@@ -44,10 +44,13 @@ func sleeper(c sleeperConfig, backend storage.PosterRetriever, metrics metrics.C
 						break
 					}
 				}
-
-				if status == "waking_up" {
+				switch status {
+				case "waking_up":
 					logger.WithField("app", app).Info("Skipping app with status waking_up")
-					break
+					continue
+				case "sleeping":
+					logger.WithField("app", app).Info("Skipping app with status sleeping")
+					continue
 				}
 				// should check if app is waking_up before trying to put it to sleep
 				// Notify backend that sleeper will put a new app to sleep
@@ -62,6 +65,7 @@ func sleeper(c sleeperConfig, backend storage.PosterRetriever, metrics metrics.C
 					break
 				}
 				logger.WithField("app", app).Info("App is now sleeping :)")
+				sleepingGauge.Inc()
 			}
 		}
 	}

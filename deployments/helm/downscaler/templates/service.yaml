@@ -1,0 +1,26 @@
+{{- $name := include "downscaler.fullname" . -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.service.annotations }}
+  annotations:
+  {{- range $key, $value := .Values.service.annotations }}
+    {{ $key }}: {{ $value | quote }}
+  {{- end }}
+{{- end }}
+  labels:
+    app: {{ $name }}
+    chart: {{ template "downscaler.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  name: {{ $name }}-metrics
+spec:
+  ports:
+    - name: metrics
+      port: 9090
+      protocol: TCP
+      targetPort: metrics
+  selector:
+    app: {{ $name }}
+    release: {{ .Release.Name }}
+  type: "{{ .Values.service.type }}"

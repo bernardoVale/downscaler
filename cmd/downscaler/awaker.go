@@ -37,6 +37,7 @@ func awakeWatcher(ctx context.Context, poster storage.Poster, getter kube.GetDep
 					logger.WithError(err).Panicf("Could not set backend status to awake. Key: %s", app.Key())
 					panic(err)
 				}
+				sleepingGauge.Dec()
 				return
 			}
 		case <-ctx.Done():

@@ -1,12 +1,16 @@
-hash: e22870a5f2a487c7bf076f67a96461801d217992bfbc25544ff4dbf01a8902d2
-updated: 2018-10-17T20:52:10.716369-03:00
+hash: c1cb87a156c4f2c15e8584cc36590570459b1c6140382c43b4f9f959b0eb931d
+updated: 2018-10-27T18:44:41.418974-03:00
 imports:
+- name: github.com/beorn7/perks
+  version: b965b613227fddccbfffe13eae360ed3fa822f8d
+  subpackages:
+  - quantile
 - name: github.com/fsnotify/fsnotify
   version: ccc981bf80385c528a65fbfdd49bf2d8da22aa23
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-redis/redis
-  version: f3bba01df2026fc865f7782948845db9cf44cf23
+  version: b3d9bf10f6666b2ee5100a6f3f84f4caf3b4e37d
   subpackages:
   - internal
   - internal/consistenthash
@@ -64,6 +68,12 @@ imports:
   version: 5c8c8bd35d3832f5d134ae1e1e375b69a4d25242
 - name: github.com/magiconair/properties
   version: c2353362d570a7bfa228149c62842019201cfb71
+- name: github.com/matttproud/golang_protobuf_extensions
+  version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
+  subpackages:
+  - pbutil
+- name: github.com/MeteoGroup/go-metrics-prometheus
+  version: 1d412ec2ed4f27fdfc96499ee3423812a662e74a
 - name: github.com/mitchellh/mapstructure
   version: f3009df150dadf309fdee4a54ed65c124afad715
 - name: github.com/modern-go/concurrent
@@ -79,10 +89,29 @@ imports:
   subpackages:
   - api
   - api/prometheus/v1
+  - prometheus
+  - prometheus/internal
+  - prometheus/promhttp
+- name: github.com/prometheus/client_model
+  version: 5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f
+  subpackages:
+  - go
 - name: github.com/prometheus/common
   version: c7de2306084e37d54b8be01f3541a8464345e9a5
   subpackages:
+  - expfmt
+  - internal/bitbucket.org/ww/goautoneg
   - model
+- name: github.com/prometheus/procfs
+  version: 185b4288413d2a0dd0806f78c90dde719829e5ae
+  subpackages:
+  - internal/util
+  - nfs
+  - xfs
+- name: github.com/rcrowley/go-metrics
+  version: 1f30fe9094a513ce4c700b9a54458bbb0c96996c
+  subpackages:
+  - exp
 - name: github.com/satori/go.uuid
   version: f58768cc1a7a7e77a3bd49e98cdd21419399b6a3
 - name: github.com/sirupsen/logrus

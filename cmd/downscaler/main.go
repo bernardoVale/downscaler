@@ -138,8 +138,6 @@ func main() {
 	sleeperInterval := viper.GetString("sleeper.interval")
 	sleeperMaxIdle := viper.GetString("sleeper.max.idle")
 
-	// setupLogAndMetrics(viper.GetBool("debug"))
-
 	interval, err := time.ParseDuration(sleeperInterval)
 	mustWithMsg(err, "Could not parse sleeper.internal. Use a valid interval such as 10s, 2h, 1d")
 	_, err = time.ParseDuration(sleeperMaxIdle)
@@ -154,8 +152,6 @@ func main() {
 	redis := storage.NewRedisClient(backendHost, backendPassword, "wakeup")
 	defer redis.Close()
 
-	// mustWithMsg(redis.MigrateKeys("sleeping", "downscaler"), "could not migrate redis keys")
-
 	//abscure code, if metrics.host is a file use fakeMetrics
 	var metricsClient metrics.Client
 	if _, err := os.Stat(prometheusURL); os.IsNotExist(err) {
@@ -168,7 +164,6 @@ func main() {
 	kubeClient, err := kube.NewKubernetesClient()
 	mustWithMsg(err, "Failed to create a Kubernetes client")
 
-	// reconciliatorCounter := prometheus.NewRegisteredCounter("reconciliate-count", metrics.DefaultRegistry)
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
 		mustWithMsg(http.ListenAndServe(viper.GetString("metrics.expvars.bind"), nil), "could not expose metrics")

@@ -61,6 +61,12 @@ var (
 		Namespace: "downscaler",
 		Help:      "Counts awake actions",
 	})
+	awakeTimeout = prometheus.NewCounter(prometheus.CounterOpts{
+		Name:      "timeout",
+		Subsystem: "awake",
+		Namespace: "downscaler",
+		Help:      "Counts awake timeout",
+	})
 	sleepingCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Name:      "count",
 		Subsystem: "sleeping",
@@ -110,6 +116,7 @@ func init() {
 	prometheus.MustRegister(wakingUpErr)
 	prometheus.MustRegister(awakeCounter)
 	prometheus.MustRegister(awakeErr)
+	prometheus.MustRegister(awakeTimeout)
 	prometheus.MustRegister(sleepingCounter)
 	prometheus.MustRegister(sleepingErr)
 }

@@ -13,6 +13,7 @@ import (
 func awakeWatcher(ctx context.Context, poster storage.Poster, getter kube.GetDeployment, app types.App) {
 	logger := logrus.WithFields(logrus.Fields{"method": "awakeWatcher", "app": app})
 
+	timeout := time.After(wakingUpTTL)
 	tick := time.NewTicker(time.Second * 5)
 	defer tick.Stop()
 	for {
@@ -43,6 +44,10 @@ func awakeWatcher(ctx context.Context, poster storage.Poster, getter kube.GetDep
 				awakeCounter.Inc()
 				return
 			}
+		case <-timeout:
+			logger.Error("Timeout while trying to watch deployment transition")
+			awakeTimeout.Inc()
+			return
 		case <-ctx.Done():
 			logger.Error("Context done")
 			return
